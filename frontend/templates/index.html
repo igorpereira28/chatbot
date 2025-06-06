@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot BoW</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div id="suggestions">
+        <strong>Dicas de perguntas:</strong>
+        <ul>
+            <li>Como instalo o programa X?</li>
+            <li>Como faço login?</li>
+            <li>Como alterar minha senha?</li>
+            <li>Como sair do sistema?</li>
+            <li>Quais os atalhos do sistema?</li>
+        </ul>
+    </div>
+
+    <div class="chat-container">
+        <div id="chat-box"></div>
+        <input type="text" id="user-input" placeholder="Digite sua mensagem..." autofocus>
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById("user-input");
+            const message = input.value.trim();
+            if (message === "") return;
+
+            appendToChat("Você: " + message);
+            input.value = "";
+
+            const response = await fetch("/ask", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message })
+            });
+
+            const data = await response.json();
+            appendToChat("Bot: " + data.response);
+        }
+
+        function appendToChat(message) {
+            const chatBox = document.getElementById("chat-box");
+            const div = document.createElement("div");
+            div.textContent = message;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
