@@ -8,28 +8,38 @@ function App() {
   const [modo, setModo] = useState<"busca" | "chat">("busca");
   const [input, setInput] = useState("");
   const [respostas, setRespostas] = useState<string[]>([]);
+  const [carregando, setCarregando] = useState(false);
 
   const enviar = async () => {
     if (!input.trim()) return;
 
-    if (modo === "busca") {
-      const response = await fetch(API_BUSCA, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: input, top_k: 3 }),
-      });
-      const data = await response.json();
-      setRespostas(data); // espera lista de strings do backend
-    } else {
-      const response = await fetch(API_CHAT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
-      });
-      const data = await response.json();
-      setRespostas([data.response]); // resposta é string dentro de { response }
+    setCarregando(true);
+    
+    try {
+      if (modo === "busca") {
+        const response = await fetch(API_BUSCA, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: input, top_k: 3 }),
+        });
+        const data = await response.json();
+        setRespostas(data);
+      } else {
+        const response = await fetch(API_CHAT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input }),
+        });
+        const data = await response.json();
+        setRespostas([data.response]);
+      }
+      setInput("");
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      alert("Erro ao processar requisição");
+    } finally {
+      setCarregando(false);
     }
-    setInput("");
   };
 
   return (
@@ -42,6 +52,7 @@ function App() {
           setModo(e.target.value as "busca" | "chat");
           setRespostas([]);
         }}
+        disabled={carregando}
       >
         <option value="busca">Busca Semântica</option>
         <option value="chat">Chatbot</option>
@@ -65,9 +76,15 @@ function App() {
         placeholder="Digite sua pergunta..."
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && enviar()}
+        onKeyDown={(e) => e.key === "Enter" && !carregando && enviar()}
+        disabled={carregando}
       />
-      <button onClick={enviar}>Enviar</button>
+      
+      <button onClick={enviar} disabled={carregando || !input.trim()}>
+        {carregando ? "Enviando..." : "Enviar"}
+      </button>
+
+      {carregando && <div className="loading">Processando...</div>}
 
       <div className="respostas">
         {respostas.map((resp, i) => (
